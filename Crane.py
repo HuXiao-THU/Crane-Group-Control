@@ -2,6 +2,7 @@
 This file contains the world model of the crane-group-control problem
 """
 import math
+import numpy as np
 
 class Crane(object):
     def __init__(self):
@@ -10,22 +11,23 @@ class Crane(object):
         self.y = 0
 
         # 状态变量
-        self.theta = 0      # 角位置
-        self.omega = 0      # 角速度
-        self.alpha = 0      # 角加速度
+        self.arm_theta = 0      # 角位置
+        self.arm_omega = 0      # 角速度
+        self.arm_alpha = 0      # 角加速度
         self.car_pos = 0    # 小车位置
         self.car_speed = 0  # 小车速度
         self.car_acceleration = 0   # 小车加速度
         self.hook_height = 0        # 吊钩高度（距离地面）
         self.hook_speed = 0         # 吊钩速度
-        self.hook_acceleration = 0  # 吊钩加速度
+        # self.hook_acceleration = 0  # 吊钩加速度
 
         self.locked = False # 大臂制动
         self.load = 0       # 载重，假设不会超载
+        self.weightID = 0   # 记录所载货物的ID
         self.rotate_friction_domain = False # 标记摩擦阻力是否超过了动力，方便计算是否会停下（程序精度不够）
         self.car_friction_domain = False    # 同上，用于小车
 
-        # 塔吊参数
+        # 塔吊物理参数
         self.R1 = 0         # 大臂前端长度
         self.R2 = 0         # 大臂后端长度
         self.height = 0     # 大臂高度
@@ -57,8 +59,8 @@ class Crane(object):
         if self.locked:
             return
         
-        # 转动力矩来源于动力和风的作用
-        M = self.moment[power] + self.getWindMoment(wind_direction, wind_speed)
+        # 转动力矩来源于动力和风的作用，暂时先不考虑风的作用
+        M = self.moment[power] # + self.getWindMoment(wind_direction, wind_speed)
 
         # 减去摩擦力
         if self.omega != 0:
@@ -76,7 +78,7 @@ class Crane(object):
             else:
                 M = min(M + self.getRotateFriction(), 0)
         
-        self.alpha = M / self.getRotateInertia()
+        self.arm_alpha = M / self.getRotateInertia()
     
     def moveCar(self, power, wind_direction=0, wind_speed=0):
         """
@@ -86,7 +88,7 @@ class Crane(object):
         wind_direction: float, 0 to 2*pi. the direction where the wind comes
         wind_speed: float, 0 to ...100? the wind speed, which will affect the crane's rotate
         """
-        F = self.car_power[power]
+        F = self.car_power[power]   # 暂时不考虑风会吹动小车的可能性
 
         if self.car_speed != 0:
             if abs(F) < self.getCarFraction():
@@ -105,7 +107,6 @@ class Crane(object):
         
         self.car_acceleration = F / (self.car_mass + self.load)
 
-
     def moveHook(self, power):
         """
         operate the hook with certain power
@@ -115,12 +116,35 @@ class Crane(object):
         """
         self.hook_speed = self.hook_power[power]
 
-    def update(self):
+    def update(self, dt):
         """
         update all the physical state of the crane by the physical difference equation
+
+        dt: positive float. the time difference to update the states, the lower the better
         """
-        # TODO
-        pass
+        # arm
+        if not self.locked:
+            self.arm_theta += self.arm_omega * dt
+            if self.rotate_friction_domain:
+                original_sign = np.sign(self.arm_omega)
+                self.arm_omega += self.arm_alpha * dt
+                if original_sign != np.sign(self.arm_omega):
+                    self.arm_omega = 0
+            else:
+                self.arm_omega += self.arm_alpha * dt
+            
+        # car
+        self.car_pos += self.car_speed * dt
+        if self.car_friction_domain:
+            original_sign = np.sign(self.car_speed)
+            self.car_speed += self.car_acceleration * dt
+            if original_sign != np.sign(self.car_speed):
+                self.car_speed = 0
+        else:
+            self.car_speed += self.car_acceleration * dt
+
+        # hook
+        self.hook_height += self.hook_speed * dt
         
     def getWindMoment(self, wind_direction, wind_speed):
         """
@@ -133,7 +157,7 @@ class Crane(object):
         """
         return the ABS of the rotate friction (including air resistance) according to the current speed and load
         """
-        return self.basic_rotate_friction + abs(self.omega) * self.air_resistance_factor + self.load * self.rotate_friction_load_factor
+        return self.basic_rotate_friction + abs(self.arm_omega) * self.air_resistance_factor + self.load * self.rotate_friction_load_factor
 
     def getRotateInertia(self):
         """
@@ -147,7 +171,7 @@ class Crane(object):
         """
         return self.basic_car_friction + self.load * self.car_friction_load_factor
 
-    def loadWeight(self, weight):
+    def loadWeight(self, weight, weightID):
         """
         load with weight
 
@@ -155,6 +179,7 @@ class Crane(object):
         """
         if self.load == 0:
             self.load = weight
+            self.weightID = weightID
         else:
             print("ERROR: load new weight before unload!")
     
@@ -164,5 +189,6 @@ class Crane(object):
         """
         if self.load > 0:
             self.load = 0
+            self.weightID = None
         else:
             print("ERROR: unload before load anythin!")
