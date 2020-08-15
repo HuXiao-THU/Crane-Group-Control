@@ -22,7 +22,8 @@ class Crane(object):
 
         self.locked = False # 大臂制动
         self.load = 0       # 载重，假设不会超载
-        self.rotate_friction_domain = False # 标记摩擦阻力是否超过了
+        self.rotate_friction_domain = False # 标记摩擦阻力是否超过了动力，方便计算是否会停下（程序精度不够）
+        self.car_friction_domain = False    # 同上，用于小车
 
         # 塔吊参数
         self.R1 = 0         # 大臂前端长度
@@ -39,10 +40,11 @@ class Crane(object):
         self.basic_rotate_inertia = 0   # 塔机本身的转动惯量
         self.basic_car_friction = 0     # 小车运动的静摩擦力
         self.car_friction_load_factor = 0       # 小车运动负载摩擦力因数
+        self.car_mass = 0               # 小车本身质量
 
         self.moment = [0, 100, 200, 300, 400, -400, -300, -200, -100]   # 各个挡位的转动力矩
         self.car_power = [0, 100, 200, 300, -300, -200, -100]           # 小车各个挡位的动力
-        self.hook_power = [0, 100, 200, 300, -300, -200, -100]          # 吊钩各个挡位的动力
+        self.hook_power = [0, 0.05, 0.10, 0.15, -0.15, -0.10, -0.05]    # 吊钩各个挡位的速度
 
     def rotate(self, power, wind_direction=0, wind_speed=0):
         """
@@ -76,32 +78,55 @@ class Crane(object):
         
         self.alpha = M / self.getRotateInertia()
     
-    def moveCar(self, power):
+    def moveCar(self, power, wind_direction=0, wind_speed=0):
         """
         operate the car with certain power
 
         power: int, -3 to 3. the power to drive the car
+        wind_direction: float, 0 to 2*pi. the direction where the wind comes
+        wind_speed: float, 0 to ...100? the wind speed, which will affect the crane's rotate
         """
-        pass
+        F = self.car_power[power]
+
+        if self.car_speed != 0:
+            if abs(F) < self.getCarFraction():
+                self.car_friction_domain = True
+            else:
+                self.car_friction_domain = False
+            if F > 0:
+                F = F - self.getCarFraction()
+            else:
+                F = F + self.getCarFraction()
+        else:
+            if F > 0:
+                F = max(F - self.getCarFraction(), 0)
+            else:
+                F = min(F + self.getCarFraction(), 0)
+        
+        self.car_acceleration = F / (self.car_mass + self.load)
+
 
     def moveHook(self, power):
         """
         operate the hook with certain power
+        to simplify the model, here we directly use set the hook's speed
 
         power: int, -3 to 3. the power to drive the hook
         """
-        pass
+        self.hook_speed = self.hook_power[power]
 
     def update(self):
         """
         update all the physical state of the crane by the physical difference equation
         """
+        # TODO
         pass
         
     def getWindMoment(self, wind_direction, wind_speed):
         """
         return the moment that the wind pushed on the crane
         """
+        # TODO
         pass
 
     def getRotateFriction(self):
@@ -115,6 +140,12 @@ class Crane(object):
         return the rotational inertia of the arm
         """
         return self.basic_rotate_inertia + self.load * (self.car_pos**2)
+
+    def getCarFraction(self):
+        """
+        return the friction of the car
+        """
+        return self.basic_car_friction + self.load * self.car_friction_load_factor
 
     def loadWeight(self, weight):
         """
