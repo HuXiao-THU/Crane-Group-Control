@@ -1,5 +1,6 @@
 """
 This file contains the world model of the crane-group-control problem
+The crane control will be modeled in discrete format
 """
 import math
 import numpy as np

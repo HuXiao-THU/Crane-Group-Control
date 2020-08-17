@@ -1,7 +1,7 @@
 """
 This file contains the world that the agents are in
 """
-from Crane import Crane
+from Crane_continuous import Crane
 import numpy as np
 import math
 from math import pi
@@ -53,9 +53,9 @@ class World(object):
         do the action, return the tuple of (state, reward, done, _)
 
         params:
-            action (list): [arm_power, car_power, hook_power]
+            action (list): [arm_power, car_power, hook_power], all -1.0 to 1.0
         """
-        
+        pass
 
     def getState(self):
         """
