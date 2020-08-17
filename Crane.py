@@ -21,20 +21,22 @@ class Crane(object):
         self.hook_speed = 0         # 吊钩速度
         # self.hook_acceleration = 0  # 吊钩加速度
 
-        self.locked = False # 大臂制动
+        self.locked = False # 大臂制动，用于考虑大风的场景
         self.load = 0       # 载重，假设不会超载
-        self.weightID = 0   # 记录所载货物的ID
+        # self.weightID = 0   # 记录所载货物的ID
         self.rotate_friction_domain = False # 标记摩擦阻力是否超过了动力，方便计算是否会停下（程序精度不够）
         self.car_friction_domain = False    # 同上，用于小车
 
         # 塔吊物理参数
         self.R1 = 0         # 大臂前端长度
         self.R2 = 0         # 大臂后端长度
-        self.height = 0     # 大臂高度
+        self.height = 100.0     # 大臂下侧高度
 
         self.theta_limit = 10 * math.pi # 大臂转动角度限制
         self.car_limit_near_end = 0     # 小车近端距离限制
         self.car_limit_far_end = 0      # 小车远端距离限制
+        self.min_load = 0               # 最小载重量
+        self.max_load = 3000.0          # 最大载重量
 
         self.basic_rotate_friction = 0  # 大臂转动的静摩擦力
         self.air_resistance_factor = 0  # 大臂转动空气阻力因数
