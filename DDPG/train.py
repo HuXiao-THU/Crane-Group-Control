@@ -22,7 +22,7 @@ def train():
     plt.xlabel('Episode #')
     plt.show()
 
-def ddpg(env, agent, n_episodes=2000, max_t=6000):
+def ddpg(env, agent, n_episodes=2000, max_t=1200):
     scores_deque = deque(maxlen=100)
     scores = []
     max_score = -np.Inf
@@ -37,7 +37,7 @@ def ddpg(env, agent, n_episodes=2000, max_t=6000):
             agent.step(state, action, reward, next_state, done)
             state = next_state
             score += reward
-            details = env.getDetailToShow()
+            # details = env.getDetailToShow()
             # print("\rtime: {:.1f}, rotate_power: {:.3f}, theta: {:.4f}*pi, omega: {:.4f}, car_power: {:.3f}, hook_power: {:.3f}, car_pos: {:.2f}, hook_height: {:.2f}, distCost: {:.3f}, speedCost: {:.3f}".format(details['time'], action[0], details['theta'], details['omega'], action[1], action[2], details['car_pos'], details['hook_height'], _['distCost'], _['speedCost']), end="")
             # print("\rcar_power: {:.3f}, speed: {:.3f}, pos: {:.3f}".format(action[1], details['car_speed'], details['car_pos']), end='')
             # time.sleep(0.1)

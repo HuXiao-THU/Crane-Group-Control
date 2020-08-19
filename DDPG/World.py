@@ -90,7 +90,7 @@ class World(object):
             r -= speedCost
 
             if speed < self.speed_threshold:
-                r += 1000
+                r += 10000
                 self.count += 1
                 # 装货或卸货
                 if self.new_load:
@@ -108,7 +108,7 @@ class World(object):
 
         # check if is done
         # 到达目的地就算完成这个episode
-        done = False if self.count < 2 or self.t >= self. total_t else True
+        done = False if self.count < 1 or self.t >= self. total_t else True
 
         # return
         return (self.getState(), r, done, {'distCost':distCost, 'speedCost':speedCost})
@@ -156,10 +156,11 @@ class World(object):
         0 ~ threshold: linear, 0.0 - 0.5
         threshold ~ inf: tanh, 0.5 - 1.0
         """
-        if dist <= self.radius_threshold:
-            return 0.5 * dist / self.radius_threshold
-        else:
-            return 0.5 + 0.5 * math.tanh((dist - self.radius_threshold) / 100.0 )
+        # if dist <= self.radius_threshold:
+        #     return 0.5 * dist / self.radius_threshold
+        # else:
+        #     return 0.5 + 0.5 * math.tanh((dist - self.radius_threshold) / 100.0 )
+        return 0.1 * dist
 
     def getSpeedCost(self, speed):
         """

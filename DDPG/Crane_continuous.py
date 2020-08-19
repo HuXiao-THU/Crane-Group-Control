@@ -50,7 +50,7 @@ class Crane(object):
         self.car_speed_limit = 0.1          # 小车前后移动最大速度
 
         # 最大动力输出
-        self.max_moment = 100.0
+        self.max_moment = 200.0
         self.max_car_power = 5000.0
         self.max_hook_speed = 0.1
 
