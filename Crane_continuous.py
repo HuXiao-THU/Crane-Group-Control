@@ -18,7 +18,7 @@ class Crane(object):
         self.car_pos = 0    # 小车位置
         self.car_speed = 0  # 小车速度
         self.car_acceleration = 0   # 小车加速度
-        self.hook_height = 0        # 吊钩高度（距离地面）
+        self.hook_height = 0        # 吊钩底高度（距离地面）
         self.hook_speed = 0         # 吊钩速度
         # self.hook_acceleration = 0  # 吊钩加速度
 
@@ -29,32 +29,34 @@ class Crane(object):
         self.car_friction_domain = False    # 同上，用于小车
 
         # 塔吊物理参数
-        self.R1 = 0         # 大臂前端长度
-        self.R2 = 0         # 大臂后端长度
-        self.height = 100.0     # 大臂下侧高度
+        self.R1 = 35         # 大臂前端长度
+        self.R2 = 10         # 大臂后端长度
+        self.height = 25.0     # 大臂下侧高度
+        self.hook_length = 0.6  # 吊钩的长度（竖向）
 
         self.theta_limit = 10 * math.pi # 大臂转动角度限制
-        self.car_limit_near_end = 0     # 小车近端距离限制
-        self.car_limit_far_end = 0      # 小车远端距离限制
-        self.min_load = 0               # 最小载重量
-        self.max_load = 3000.0          # 最大载重量
+        self.car_limit_near_end = 2.5     # 小车近端距离限制
+        self.car_limit_far_end = 30.0      # 小车远端距离限制
+        self.min_load = 10               # 最小载重量
+        self.max_load = 800.0          # 最大载重量
 
-        self.basic_rotate_friction = 0  # 大臂转动的静摩擦力
-        self.air_resistance_factor = 0  # 大臂转动空气阻力因数
-        self.rotate_friction_load_factor = 0    # 大臂转动负载摩擦力因数
+        self.basic_rotate_friction = 30.0  # 大臂转动的静摩擦力
+        self.air_resistance_factor = 5900.0  # 大臂转动空气阻力因数
+        self.rotate_friction_load_factor = 0.1    # 大臂转动负载摩擦力因数
         self.basic_rotate_inertia = 0   # 塔机本身的转动惯量
-        self.basic_car_friction = 0     # 小车运动的静摩擦力
-        self.car_friction_load_factor = 0       # 小车运动负载摩擦力因数
-        self.car_mass = 0               # 小车本身质量
+        self.basic_car_friction = 5.0     # 小车运动的静摩擦力
+        self.car_friction_load_factor = 0.1       # 小车运动负载摩擦力因数
+        self.car_mass = 100.0               # 小车本身质量
 
-        # self.moment = [0, 100, 200, 300, 400, -400, -300, -200, -100]   # 各个挡位的转动力矩
-        # self.car_power = [0, 100, 200, 300, -300, -200, -100]           # 小车各个挡位的动力
-        # self.hook_power = [0, 0.05, 0.10, 0.15, -0.15, -0.10, -0.05]    # 吊钩各个挡位的速度
-
-        # 改用连续量
+        # 最大动力输出
         self.max_moment = 500.0
         self.max_car_power = 100.0
         self.max_hook_speed = 0.1
+
+        # 用于计算reward，暂不考虑
+        self.rotate_power_factor = 200  # 转动电力最大消耗
+        self.car_power_factor = 100     # 小车电力最大消耗
+        self.hook_power_factor = 100    # 吊钩电力最大消耗
 
     def rotate(self, power, wind_direction=0, wind_speed=0):
         """
@@ -133,6 +135,10 @@ class Crane(object):
         # arm
         if not self.locked:
             self.arm_theta += self.arm_omega * dt
+            # 限位
+            if abs(self.arm_theta) > self.theta_limit:
+                self.arm_theta = np.sign(self.arm_theta) * self.theta_limit
+
             if self.rotate_friction_domain:
                 original_sign = np.sign(self.arm_omega)
                 self.arm_omega += self.arm_alpha * dt
@@ -143,6 +149,12 @@ class Crane(object):
             
         # car
         self.car_pos += self.car_speed * dt
+        # 小车限位
+        if self.car_pos > self.car_limit_far_end:
+            self.car_pos = self.car_limit_far_end
+        if self.car_pos < self.car_limit_near_end:
+            self.car_pos = self.car_limit_near_end
+
         if self.car_friction_domain:
             original_sign = np.sign(self.car_speed)
             self.car_speed += self.car_acceleration * dt
@@ -153,7 +165,21 @@ class Crane(object):
 
         # hook
         self.hook_height += self.hook_speed * dt
-        
+        if self.hook_height > self.height - self.hook_length:
+            self.hook_height = self.height - self.hook_length
+        if self.hook_height < 0.0:
+            self.hook_height = 0.0
+    
+    def getSpeed(self):
+        """
+        return the speed of the hook(load)
+        """
+        x_1 = self.car_speed * math.cos(self.arm_theta) - self.car_pos * math.sin(self.arm_theta) * self.arm_omega
+        y_1 = self.car_speed * math.sin(self.arm_theta) + self.car_pos * math.cos(self.arm_theta) * self.arm_omega
+        z_1 = self.hook_speed
+        speed = (x_1**2 + y_1**2 + z_1**2)**0.5
+        return speed
+
     def getWindMoment(self, wind_direction, wind_speed):
         """
         return the moment that the wind pushed on the crane
@@ -179,7 +205,7 @@ class Crane(object):
         """
         return self.basic_car_friction + self.load * self.car_friction_load_factor
 
-    def loadWeight(self, weight, weightID):
+    def loadWeight(self, weight, weightID=0):
         """
         load with weight
 
