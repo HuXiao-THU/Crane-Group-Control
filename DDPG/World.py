@@ -57,7 +57,7 @@ class World(object):
         self.t = 0
         self.count = 0
 
-        return getState()
+        return self.getState()
 
     def step(self, action):
         """
@@ -106,7 +106,7 @@ class World(object):
 
         # check if is done
         # 到达目的地就算完成这个episode
-        done = False if self.count < 2 else True
+        done = False if self.count < 2 or self.t >= self. total_t else True
 
         # return
         return self.getState(), r, done, {'distCost':distCost, 'speedCost':speedCost}
@@ -127,8 +127,7 @@ class World(object):
         state.append(self.crane.car_pos - self.target_r)
         state.append(self.crane.hook_height - self.target_h)
 
-        return state
-
+        return np.array(state)
     def getDistance(self):
         """
         return the distance of the hook to the target
