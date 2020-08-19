@@ -66,6 +66,7 @@ class World(object):
         params:
             action (list): [arm_power, car_power, hook_power], all -1.0 to 1.0
         """
+        self.t += 1
         # do the action
         self.crane.rotate(action[0])
         self.crane.moveCar(action[1])
@@ -80,6 +81,7 @@ class World(object):
         dist = self.getDistance()
         speed = self.crane.getSpeed()
         distCost = self.getDistCost(dist)
+        # print("dist: ", dist, "\t distCost: ", distCost)
         r -= distCost
         # r -= self.getSpeedCost(speed) # 想清楚在外面空间需不需要控制速度
 
@@ -109,8 +111,7 @@ class World(object):
         done = False if self.count < 2 or self.t >= self. total_t else True
 
         # return
-        return self.getState(), r, done, {'distCost':distCost, 'speedCost':speedCost}
-
+        return (self.getState(), r, done, {'distCost':distCost, 'speedCost':speedCost})
 
     def getState(self):
         """
@@ -119,15 +120,21 @@ class World(object):
         (arm_omega, car_speed, hook_height, load, delta_theta, delta_x, delta_h)
         """
         state = []
+        dtheta = self.crane.arm_theta - self.target_theta
+        while dtheta < 0:
+            dtheta += 2 * pi
+        while dtheta >= 2 * pi:
+            dtheta -= 2 * pi
         state.append(self.crane.arm_omega)
         state.append(self.crane.car_speed)
         state.append(self.crane.hook_height)
         state.append(self.crane.load)
-        state.append((self.crane.arm_theta - self.target_theta) % (2*pi))
+        state.append(dtheta)
         state.append(self.crane.car_pos - self.target_r)
         state.append(self.crane.hook_height - self.target_h)
 
         return np.array(state)
+
     def getDistance(self):
         """
         return the distance of the hook to the target
@@ -152,7 +159,7 @@ class World(object):
         if dist <= self.radius_threshold:
             return 0.5 * dist / self.radius_threshold
         else:
-            return 0.5 + 0.5 * math.tanh(dist - self.radius_threshold)
+            return 0.5 + 0.5 * math.tanh((dist - self.radius_threshold) / 100.0 )
 
     def getSpeedCost(self, speed):
         """
@@ -165,3 +172,17 @@ class World(object):
             return 0
         else:
             return math.exp(speed - self.speed_threshold)
+    
+    def getDetailToShow(self):
+        """
+        return a dict containing the detail data for debug
+        """
+        details = {}
+        details['time'] = self.t * self.dt
+        details['theta'] = self.crane.arm_theta / pi
+        details['car_pos'] = self.crane.car_pos
+        details['car_speed'] = self.crane.car_speed
+        details['hook_height'] = self.crane.hook_height
+        details['omega'] = self.crane.arm_omega
+        details['alpha'] = self.crane.arm_alpha
+        return details

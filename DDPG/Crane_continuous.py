@@ -41,16 +41,17 @@ class Crane(object):
         self.max_load = 800.0          # 最大载重量
 
         self.basic_rotate_friction = 30.0  # 大臂转动的静摩擦力
-        self.air_resistance_factor = 5900.0  # 大臂转动空气阻力因数
+        self.air_resistance_factor = 300.0  # 大臂转动空气阻力因数
         self.rotate_friction_load_factor = 0.1    # 大臂转动负载摩擦力因数
-        self.basic_rotate_inertia = 0   # 塔机本身的转动惯量
+        self.basic_rotate_inertia = 1e3   # 塔机本身的转动惯量
         self.basic_car_friction = 5.0     # 小车运动的静摩擦力
         self.car_friction_load_factor = 0.1       # 小车运动负载摩擦力因数
-        self.car_mass = 100.0               # 小车本身质量
+        self.car_mass = 500.0               # 小车本身质量
+        self.car_speed_limit = 0.1          # 小车前后移动最大速度
 
         # 最大动力输出
-        self.max_moment = 500.0
-        self.max_car_power = 100.0
+        self.max_moment = 100.0
+        self.max_car_power = 5000.0
         self.max_hook_speed = 0.1
 
         # 用于计算reward，暂不考虑
@@ -71,13 +72,14 @@ class Crane(object):
         
         # 转动力矩来源于动力和风的作用，暂时先不考虑风的作用
         M = self.max_moment * power # + self.getWindMoment(wind_direction, wind_speed)
+        # print("\nM: {:.3f}, friction: {:.3f}".format(M, self.getRotateFriction()))
 
         # 减去摩擦力
-        if self.omega != 0:
-            if abs(M) < self.getRotateFriction():   # 标记一下阻力是否大于动力，方便克服程序精度问题而判断旋转是否会停下
-                self.rotate_friction_domain = True
-            else:
-                self.rotate_friction_domain = False
+        if abs(M) < self.getRotateFriction():   # 标记一下阻力是否大于动力，方便克服程序精度问题而判断旋转是否会停下
+            self.rotate_friction_domain = True
+        else:
+            self.rotate_friction_domain = False
+        if self.arm_omega != 0:
             if M > 0:
                 M = M - self.getRotateFriction()
             else:
@@ -88,6 +90,7 @@ class Crane(object):
             else:
                 M = min(M + self.getRotateFriction(), 0)
         
+        # print("M_real: {:.3f}".format(M))
         self.arm_alpha = M / self.getRotateInertia()
     
     def moveCar(self, power, wind_direction=0, wind_speed=0):
@@ -100,11 +103,12 @@ class Crane(object):
         """
         F = self.max_car_power * power   # 暂时不考虑风会吹动小车的可能性
 
+        if abs(F) < self.getCarFraction():
+            self.car_friction_domain = True
+        else:
+            self.car_friction_domain = False
+
         if self.car_speed != 0:
-            if abs(F) < self.getCarFraction():
-                self.car_friction_domain = True
-            else:
-                self.car_friction_domain = False
             if F > 0:
                 F = F - self.getCarFraction()
             else:
@@ -138,12 +142,13 @@ class Crane(object):
             # 限位
             if abs(self.arm_theta) > self.theta_limit:
                 self.arm_theta = np.sign(self.arm_theta) * self.theta_limit
+                self.arm_omega = 0.0
 
             if self.rotate_friction_domain:
                 original_sign = np.sign(self.arm_omega)
                 self.arm_omega += self.arm_alpha * dt
                 if original_sign != np.sign(self.arm_omega):
-                    self.arm_omega = 0
+                    self.arm_omega = 0.0
             else:
                 self.arm_omega += self.arm_alpha * dt
             
@@ -152,8 +157,17 @@ class Crane(object):
         # 小车限位
         if self.car_pos > self.car_limit_far_end:
             self.car_pos = self.car_limit_far_end
+            self.car_speed = 0.0
         if self.car_pos < self.car_limit_near_end:
             self.car_pos = self.car_limit_near_end
+            self.car_speed = 0.0
+
+        # 小车限速
+        if abs(self.car_speed) >= self.car_speed_limit:
+            if np.sign(self.car_acceleration) == np.sign(self.car_speed):
+                self.car_acceleration = 0.0
+            self.car_speed = np.sign(self.car_speed) * self.car_speed_limit
+            
 
         if self.car_friction_domain:
             original_sign = np.sign(self.car_speed)
