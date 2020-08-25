@@ -17,8 +17,8 @@ class World(object):
         self.dt = 0.1               # 模拟器运行时的时间精度，单位为秒
         self.radius_threshold = 0.3 # 进入目标点的（半径）距离阈值
         self.speed_threshold = 0.01 # 静止阈值
-        self.total_t = 2000         # 一个episode的最大长度
-        # self.opt_ratio = 10         # 每个操作对应持续几个dt
+        self.total_t = 120         # 一个episode的最大长度
+        self.opt_ratio = 10         # 每个操作对应持续几个dt
 
         # 运行状态变量
         self.target_theta = 0.0     # 下一个运行目标的极角
@@ -71,10 +71,11 @@ class World(object):
         self.crane.rotate(action[0])
         self.crane.moveCar(action[1])
         self.crane.moveHook(action[2])
-        self.crane.update(self.dt)
+        for __ in range(self.opt_ratio):
+            self.crane.update(self.dt)
 
         # calculate the reward
-        r = -1.0            # 每个时刻时间成本
+        r = -10.0            # 每个时刻时间成本
         distCost = 0.0      # 距离Cost
         speedCost = 0.0     # 速度Cost
 
@@ -88,6 +89,9 @@ class World(object):
         if dist < self.radius_threshold:
             speedCost = self.getSpeedCost(speed)
             r -= speedCost
+
+            if self.crane.hook_height < self.target_h:
+                r -= 1000
 
             if speed < self.speed_threshold:
                 r += 10000
