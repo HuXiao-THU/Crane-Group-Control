@@ -6,6 +6,7 @@ import time
 from collections import deque
 import matplotlib.pyplot as plt
 import pickle
+import os
 
 from World import World
 from ddpg_agent import Agent
@@ -13,6 +14,14 @@ from ddpg_agent import Agent
 def train():
     env = World()
     agent = Agent(state_size=env.observation_space, action_size=env.action_space, random_seed=10)
+    if os.path.exists('./DDPG/checkpoint_actor.pth'):
+        checkpoint = torch.load('./DDPG/checkpoint_actor.pth')
+        agent.actor_local.load_state_dict(checkpoint)
+        agent.actor_target.load_state_dict(checkpoint)
+    if os.path.exists('./DDPG/checkpoint_critic.pth'):
+        checkpoint = torch.load('./DDPG/checkpoint_critic.pth')
+        agent.critic_local.load_state_dict(checkpoint)
+        agent.critic_target.load_state_dict(checkpoint)
 
     scores = ddpg(env, agent)
 
@@ -27,7 +36,7 @@ def train():
     with open('./scores.pkl', 'b') as f:
         pickle.dump(scores, f)
 
-def ddpg(env, agent, n_episodes=2000, max_t=120):
+def ddpg(env, agent, n_episodes=100000, max_t=120):
     scores_deque = deque(maxlen=100)
     scores = []
     max_score = -np.Inf
@@ -52,8 +61,8 @@ def ddpg(env, agent, n_episodes=2000, max_t=120):
         scores.append(score)
         print('Episode {}\tAverage Score: {:.2f}\tScore: {:.2f}'.format(i_episode, np.mean(scores_deque), score))
         if i_episode % 10 == 0:
-            torch.save(agent.actor_local.state_dict(), 'checkpoint_actor.pth')
-            torch.save(agent.critic_local.state_dict(), 'checkpoint_critic.pth')
+            torch.save(agent.actor_local.state_dict(), './DDPG/checkpoint_actor.pth')
+            torch.save(agent.critic_local.state_dict(), './DDPG/checkpoint_critic.pth')
             print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_deque)))   
     return scores
 

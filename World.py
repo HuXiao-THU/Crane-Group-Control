@@ -57,7 +57,7 @@ class World(object):
         self.t = 0
         self.count = 0
 
-        return getState()
+        return self.getState()
 
     def step(self, action):
         """

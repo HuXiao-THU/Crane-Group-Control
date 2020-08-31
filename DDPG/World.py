@@ -16,9 +16,10 @@ class World(object):
         self.action_space = 3       # (arm_power, car_power, hook_power)
         self.dt = 0.1               # 模拟器运行时的时间精度，单位为秒
         self.radius_threshold = 0.3 # 进入目标点的（半径）距离阈值
-        self.speed_threshold = 0.01 # 静止阈值
-        self.total_t = 120         # 一个episode的最大长度
+        self.speed_threshold = 0.1  # 静止阈值
+        self.total_t = 120          # 一个episode的最大长度
         self.opt_ratio = 10         # 每个操作对应持续几个dt
+        self.range_ratio = 0.1      # 生成初始化位置的范围
 
         # 运行状态变量
         self.target_theta = 0.0     # 下一个运行目标的极角
@@ -37,9 +38,6 @@ class World(object):
         """
         reset the environment, return the state
         """
-        self.crane.arm_theta = random.random() * 2 * pi
-        self.crane.car_pos = self.crane.car_limit_near_end + (self.crane.car_limit_far_end - self.crane.car_limit_near_end) * random.random()
-        self.crane.hook_height = self.crane.height
 
         self.crane.arm_omega = 0.0
         self.crane.arm_alpha = 0.0
@@ -48,11 +46,13 @@ class World(object):
         self.crane.hook_speed = 0.0
         self.crane.load = 0.0
 
-        self.target_theta = random.random() * 2 * pi
+        self.target_theta = 0.0
         self.target_r = self.crane.car_limit_near_end + (self.crane.car_limit_far_end - self.crane.car_limit_near_end) * random.random()
         self.target_h = self.crane.height * random.random()
         self.target_load = self.crane.min_load + (self.crane.max_load - self.crane.min_load) * random.random()
         self.new_load = True
+
+        self.generateNewPos()
 
         self.t = 0
         self.count = 0
@@ -75,7 +75,7 @@ class World(object):
             self.crane.update(self.dt)
 
         # calculate the reward
-        r = -10.0            # 每个时刻时间成本
+        r = -1.0            # 每个时刻时间成本
         distCost = 0.0      # 距离Cost
         speedCost = 0.0     # 速度Cost
 
@@ -87,28 +87,33 @@ class World(object):
         # r -= self.getSpeedCost(speed) # 想清楚在外面空间需不需要控制速度
 
         if dist < self.radius_threshold:
+            r += 1000
             speedCost = self.getSpeedCost(speed)
             r -= speedCost
 
             if self.crane.hook_height < self.target_h:
-                r -= 1000
+                r -= 500
 
             if speed < self.speed_threshold:
-                r += 10000
-                self.count += 1
-                # 装货或卸货
-                if self.new_load:
-                    self.crane.loadWeight(self.target_load)
-                    self.target_load = 0
-                    self.new_load = False
-                else:
-                    self.crane.unloadWeight()
-                    self.target_load = self.crane.min_load + (self.crane.max_load - self.crane.min_load) * random.random()
-                    self.new_load = True
-                # 生成新位置
-                self.target_theta = random.random() * 2 * pi
-                self.target_r = self.crane.car_limit_near_end + (self.crane.car_limit_far_end - self.crane.car_limit_near_end) * random.random()
-                self.target_h = self.crane.height * random.random()
+                r += 1000
+                
+            self.count += 1
+            
+                # # 装货或卸货
+                # if self.new_load:
+                #     self.crane.loadWeight(self.target_load)
+                #     self.target_load = 0
+                #     self.new_load = False
+                # else:
+                #     self.crane.unloadWeight()
+                #     self.target_load = self.crane.min_load + (self.crane.max_load - self.crane.min_load) * random.random()
+                #     self.new_load = True
+                # # 生成新位置
+                # self.target_theta = 0.0
+                # self.target_r = self.crane.car_limit_near_end + (self.crane.car_limit_far_end - self.crane.car_limit_near_end) * random.random()
+                # self.target_h = self.crane.height * random.random()
+                # self.generateNewPos()
+
 
         # check if is done
         # 到达目的地就算完成这个episode
@@ -147,11 +152,11 @@ class World(object):
         hook_y = self.crane.car_pos * math.sin(self.crane.arm_theta)
         hook_h = self.crane.hook_height
 
-        target_x = self.target_r * math.cos(self.target_theta)
-        target_y = self.target_r * math.sin(self.target_theta)
+        target_x = self.target_r
+        target_y = 0.0
 
         dist = ( (hook_x - target_x)**2 + (hook_y - target_y)**2 + (hook_h - self.target_h)**2 )**0.5
-        return dist
+        return 0.1 * dist
 
     def getDistCost(self, dist):
         """
@@ -164,7 +169,7 @@ class World(object):
         #     return 0.5 * dist / self.radius_threshold
         # else:
         #     return 0.5 + 0.5 * math.tanh((dist - self.radius_threshold) / 100.0 )
-        return 0.1 * dist
+        return dist
 
     def getSpeedCost(self, speed):
         """
@@ -191,3 +196,21 @@ class World(object):
         details['omega'] = self.crane.arm_omega
         details['alpha'] = self.crane.arm_alpha
         return details
+
+    def generateNewPos(self):
+        """
+        generate a new start position of the crane according to the range ratio
+        """
+        self.crane.arm_theta = (-pi + random.random() * 2 * pi ) * self.range_ratio
+        d_range = (self.crane.car_limit_far_end - self.crane.car_limit_near_end) * self.range_ratio
+        r = self.target_r - 0.5 * d_range + d_range * random.random()
+        self.crane.car_pos = min(max(r, self.crane.car_limit_near_end), self.crane.car_limit_far_end)
+        h_range = self.crane.height
+        h = self.target_h - 0.5 * h_range + h_range * random.random()
+        self.crane.hook_height = min(max(h, 0.0), self.crane.height)
+
+    def setRangeRatio(self, range_ratio):
+        """
+        set the range ratio
+        """
+        self.range_ratio = range_ratio
