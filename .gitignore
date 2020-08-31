@@ -5,3 +5,4 @@ checkpoint_actor.pth
 checkpoint_critic.pth
 DDPG\checkpoint_actor.pth
 DDPG\checkpoint_critic.pth
+./DQN/checkpoint.pth

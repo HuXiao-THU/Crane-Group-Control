@@ -1,0 +1,1 @@
+max rotate speed of a crane: 0.7r/min => 4 degree/s
