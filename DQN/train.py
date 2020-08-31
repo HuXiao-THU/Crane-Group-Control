@@ -8,7 +8,7 @@ from World import World
 from dqn_agent import Agent
 
 
-def dqn(env, agent, n_episodes=10000, max_t=120, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
+def dqn(env, agent, n_episodes=100000, max_t=120, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
     """Deep Q-Learning.
     
     Params
@@ -39,7 +39,7 @@ def dqn(env, agent, n_episodes=10000, max_t=120, eps_start=1.0, eps_end=0.01, ep
         print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)), end="")
         if i_episode % 100 == 0:
             print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)))
-        if np.mean(scores_window)>=200.0:
+        if np.mean(scores_window)>=150.0:
             print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
             torch.save(agent.qnetwork_local.state_dict(), './DQN/checkpoint.pth')
             break
@@ -53,9 +53,18 @@ def main():
         pickle.dump(scores, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     # plot the scores
+
+    scores_window = deque(maxlen=100)
+    avg_scores = []
+    for score in scores:
+        scores_window.append(score)
+        avg_scores.append(np.mean(scores_window))
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    plt.plot(np.arange(len(scores)), scores)
+    plt.plot(np.arange(len(scores)), scores, linewidth=0.5, label='score')
+    plt.plot(np.arange(len(avg_scores)), avg_scores, linewidth=2, label='MA score')
+    plt.legend(['score', 'MA score'])
     plt.ylabel('Score')
     plt.xlabel('Episode #')
     fig.savefig('./DQN/training_curve.png')
