@@ -7,7 +7,6 @@ from collections import deque
 from World import World
 from dqn_agent import Agent
 
-
 def dqn(env, agent, n_episodes=100000, max_t=120, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
     """Deep Q-Learning.
     
