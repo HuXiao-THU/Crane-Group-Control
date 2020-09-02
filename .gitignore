@@ -7,3 +7,6 @@ DDPG\checkpoint_actor.pth
 DDPG\checkpoint_critic.pth
 ./DQN/checkpoint.pth
 /DQN/scores/
+/multiagent/__pycache__/
+/DQN/scores.pkl
+/multiagent/scores.pkl

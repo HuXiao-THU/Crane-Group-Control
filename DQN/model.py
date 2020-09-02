@@ -5,7 +5,7 @@ import torch.nn.functional as F
 class QNetwork(nn.Module):
     """Actor (Policy) Model."""
 
-    def __init__(self, state_size, action_size, seed, fc1_units=256, fc2_units=1024):
+    def __init__(self, state_size, action_size, seed, fc1_units=128, fc2_units=128):
         """Initialize parameters and build model.
         Params
         ======

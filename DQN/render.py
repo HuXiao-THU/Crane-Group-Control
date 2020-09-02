@@ -1,15 +1,17 @@
 import tkinter as tk
 import math
 import time
+import random
+import os
 from Crane_discrete import Crane
-from World import Target
 from math import pi
 
 class Renderer(object):
-    def __init__(self):
+    def __init__(self, data_path):
         self.root = tk.Tk()
         self.root.title('Crane Control Demo')
         self.root.geometry('1600x600+50+50')
+        self.zoom_ratio = 3
 
         self.main_frame = tk.Frame(self.root, width=1600, height=600, bg='pink')
         self.main_frame.pack()
@@ -25,7 +27,7 @@ class Renderer(object):
 
         self.current_crane = 0
 
-        self.crane_image = tk.PhotoImage(file='./data/crane.png')
+        self.crane_image = tk.PhotoImage(file=os.path.join(data_path, 'crane.png'))
         
     def render(self, crane_list, target_list, env_state):
         """
@@ -49,6 +51,16 @@ class Renderer(object):
             x = crane.x + crane.car_pos * math.cos(crane.arm_theta / 180 * pi)
             y = crane.y + crane.car_pos * math.sin(crane.arm_theta / 180 * pi)
             self.plane.create_oval(x-1, y-1, x+1, y+1, fill='black')
+
+            # button
+            tk.Button(self.plane_frame, cursor="hand", relief="flat", width=2, height=1, command=lambda: self.setCurrentCrane(crane.ID)).place(x=(crane.x-2-8)*self.zoom_ratio, y=(crane.y-2)*self.zoom_ratio)
+
+        for target in target_list:
+            self.plane.create_rectangle(crane.x + target.x * math.cos(target.theta / 180 * pi) - 3,
+                                        crane.y + target.x * math.sin(target.theta / 180 * pi) - 3,
+                                        crane.x + target.x * math.cos(target.theta / 180 * pi) + 3,
+                                        crane.y + target.x * math.sin(target.theta / 180 * pi) + 3,
+                                        fill='red')
         
         # car range: y = 200~550, x 大约 250~700
         self.vertical.delete(tk.ALL)
@@ -57,17 +69,21 @@ class Renderer(object):
             crane = crane_list[self.current_crane]
             x = 250 + (crane.car_pos - crane.car_limit_near_end) * 450 / (crane.car_limit_far_end - crane.car_limit_near_end)
             y = 200 + (crane.height - crane.hook_height) * 350 / crane.height
-            print(y,"   ",crane.hook_height)
+            # print(y,"   ",crane.hook_height)
             self.vertical.create_line(x,200,x,y,width=2)
             self.vertical.create_rectangle(x-10, y-10, x+10, y+10)
+
             y = 200 + (crane.height - target_list[self.current_crane].h) * 350 / crane.height
             self.vertical.create_line(0,y,800,y,fill='red')
 
-
+            self.vertical.create_text(20,20,text='Crane ID: {:d}'.format(self.current_crane), anchor=tk.NW, font=('microsoft yahei', 30, 'bold'))
 
         self.plane.scale('all',0,0,3,3)
         self.root.update()
 
+    def setCurrentCrane(self, ID):
+        self.current_crane = ID
+        self.root.update()
 
 if __name__ == '__main__':
     renderer = Renderer()
@@ -77,9 +93,10 @@ if __name__ == '__main__':
     crane.hook_height = 5
     target = Target()
     target.h = 3
+    target.x = 10
     while True:
-        crane.rotate(1)
-        crane.moveCar(1)
-        crane.moveHook(-1)
+        crane.rotate(random.randint(-1,2))
+        crane.moveCar(random.randint(-1,2))
+        crane.moveHook(random.randint(-1,2))
         renderer.render([crane], [target], None)
-        time.sleep(1)
+        time.sleep(0.2)
