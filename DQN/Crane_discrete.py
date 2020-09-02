@@ -56,7 +56,7 @@ class Crane(object):
         h(int): -1 to 1
         """
         self.hook_height += h
-        self.hook_height = max(0, max(self.height, self.hook_height))
+        self.hook_height = max(0, min(self.height, self.hook_height))
 
     def reset(self):
         """
