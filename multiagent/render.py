@@ -56,6 +56,7 @@ class Renderer(object):
             tk.Button(self.plane_frame, cursor="hand", relief="flat", width=2, height=1, command=lambda: self.setCurrentCrane(crane.ID)).place(x=(crane.x-2-8)*self.zoom_ratio, y=(crane.y-2)*self.zoom_ratio)
 
         for target in target_list:
+            crane = target.crane
             self.plane.create_rectangle(crane.x + target.x * math.cos(target.theta / 180 * pi) - 3,
                                         crane.y + target.x * math.sin(target.theta / 180 * pi) - 3,
                                         crane.x + target.x * math.cos(target.theta / 180 * pi) + 3,

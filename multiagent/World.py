@@ -107,7 +107,7 @@ class World(object):
             crane.rotate(rotate_power)
 
             if crane.arm_theta == target.theta and not target.done:
-                r[ID] += 200
+                r[ID] += 200 - abs(crane.arm_omega) * 25
                 target.done = True
 
         # share reward
@@ -115,10 +115,9 @@ class World(object):
         for crane in self.crane_list:
             r[crane.ID] += s * self.reward_sharing_ratio
         
+        done = True
         for target in self.target_list:
-            if not target.done:
-                done = False
-                break
+            done = done and target.done
 
         # 碰撞检测，手动写一下哪些有必要检测的
         for pair in [(0,1)]:
@@ -129,9 +128,15 @@ class World(object):
 
         if self.t > self.max_t:
             done = True
+            for ID in range(len(self.crane_list)):
+                if not self.target_list[ID].done:
+                    r[ID] -= 200
+                    for i in range(len(self.crane_list)):
+                        r[i] -= 200
 
         # return state, r, done, _
         self.score += sum(r)
+        # print(r,"Target0: ", self.target_list[0].done," Target1: ", self.target_list[1].done)
         return (self.getState(), r, done, {'score':self.score})
 
     def getState(self):
