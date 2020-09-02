@@ -2,6 +2,7 @@ import tkinter as tk
 import math
 import time
 from Crane_discrete import Crane
+from World import Target
 from math import pi
 
 class Renderer(object):
@@ -21,6 +22,10 @@ class Renderer(object):
         self.plane.pack()
         self.vertical = tk.Canvas(self.vertical_frame, width=800, height=600, bg='white')
         self.vertical.pack()
+
+        self.current_crane = 0
+
+        self.crane_image = tk.PhotoImage(file='./data/crane.png')
         
     def render(self, crane_list, target_list, env_state):
         """
@@ -45,7 +50,19 @@ class Renderer(object):
             y = crane.y + crane.car_pos * math.sin(crane.arm_theta / 180 * pi)
             self.plane.create_oval(x-1, y-1, x+1, y+1, fill='black')
         
-        # car range: y = 150~500, x 大约 250~700
+        # car range: y = 200~550, x 大约 250~700
+        self.vertical.delete(tk.ALL)
+        if self.current_crane != None:
+            self.vertical.create_image(0,50,anchor=tk.NW, image=self.crane_image)
+            crane = crane_list[self.current_crane]
+            x = 250 + (crane.car_pos - crane.car_limit_near_end) * 450 / (crane.car_limit_far_end - crane.car_limit_near_end)
+            y = 200 + (crane.height - crane.hook_height) * 350 / crane.height
+            print(y,"   ",crane.hook_height)
+            self.vertical.create_line(x,200,x,y,width=2)
+            self.vertical.create_rectangle(x-10, y-10, x+10, y+10)
+            y = 200 + (crane.height - target_list[self.current_crane].h) * 350 / crane.height
+            self.vertical.create_line(0,y,800,y,fill='red')
+
 
 
         self.plane.scale('all',0,0,3,3)
@@ -57,8 +74,12 @@ if __name__ == '__main__':
     crane = Crane()
     crane.x = 100
     crane.y = 100
+    crane.hook_height = 5
+    target = Target()
+    target.h = 3
     while True:
         crane.rotate(1)
         crane.moveCar(1)
-        renderer.render([crane], None, None)
-        time.sleep(0.3)
+        crane.moveHook(-1)
+        renderer.render([crane], [target], None)
+        time.sleep(1)

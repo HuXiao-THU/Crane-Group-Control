@@ -5,6 +5,13 @@ import numpy as np
 from math import pi
 from Crane_discrete import Crane
 
+class Target(object):
+    def __init__(self):
+        self.ID = 0
+        self.theta = 0
+        self.h = 0
+        self.x = 0
+
 class World(object):
     def __init__(self):
         self.crane = Crane()
