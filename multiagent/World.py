@@ -105,6 +105,8 @@ class World(object):
                     r[ID] -=0.05
 
             crane.rotate(rotate_power)
+            crane.moveCar(car_power)
+            crane.moveHook(hook_power)
 
             if crane.arm_theta == target.theta and not target.done:
                 r[ID] += 200 - abs(crane.arm_omega) * 25
