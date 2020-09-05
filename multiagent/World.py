@@ -49,7 +49,7 @@ class World(object):
             target.reset()
             self.target_list.append(target)
 
-        self.observation_space = 3 * len(self.crane_list)  # (arm_theta, delta_theta, arm_omega, * of other cranes)
+        self.observation_space = 3 * len(self.crane_list)  # (arm_theta, delta_theta, arm_omega) * of other cranes
         self.action_space = 3
         self.reward_sharing_ratio = 0.1
 
