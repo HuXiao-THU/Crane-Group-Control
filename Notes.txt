@@ -1,1 +1,3 @@
 max rotate speed of a crane: 0.7r/min => 4 degree/s
+准备一个预制的任务给它train
+还可以考虑一些特殊情况，比如突然中断或改变某个塔吊的任务
