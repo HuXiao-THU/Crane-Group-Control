@@ -17,7 +17,7 @@ agent1.qnetwork_local.load_state_dict(d['agent1'])
 
 # watch an untrained agent
 state = env.reset()
-for j in range(120):
+for j in range(720):
     action0 = agent0.act(state)
     action1 = agent1.act(state)
     action = [action0, action1]

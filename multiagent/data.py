@@ -31,3 +31,18 @@ def loadTargetData():
         else:
             data[ID].put(line)
     return data
+
+def copyTargetData(data):
+    """
+    manually deepcopy the target data
+    """
+    newCopy = {}
+    for key, q in data.items():
+        newCopy[key] = queue.Queue()
+        temp = []
+        while(not q.empty()):
+            temp.append(q.get())
+        for item in temp:
+            q.put(item)
+            newCopy[key].put(item)
+    return newCopy

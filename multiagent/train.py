@@ -30,7 +30,7 @@ def main():
     plt.xlabel('Episode #')
     fig.savefig('./multiagent/training_curve.png')
 
-def dqn(env, agents, n_episodes=1000, max_t=120, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
+def dqn(env, agents, n_episodes=10000, max_t=720, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
     """Deep Q-Learning.
     
     Params

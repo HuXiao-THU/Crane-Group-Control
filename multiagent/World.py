@@ -42,7 +42,9 @@ class World(object):
         self.crane_list = []
         self.target_list = []
         self.data = loadData()
-        self.target_data = loadTargetData()
+        self.target_data0 = loadTargetData()
+        self.target_data = None
+
         for line in self.data:
             crane = Crane()
             crane.ID = line[0]
@@ -54,10 +56,6 @@ class World(object):
 
         for crane in self.crane_list:
             target = Target(crane)
-            target_state = None
-            if not self.target_data[crane.ID].empty():
-                target_state = self.target_data[crane.ID].get()
-            target.reset(target_state)
             self.target_list.append(target)
 
         self.observation_space = 4 * len(self.crane_list)  # (arm_theta, delta_theta, arm_omega) * of other cranes
@@ -65,7 +63,7 @@ class World(object):
         self.reward_sharing_ratio = 0.1
 
         self.t = 0
-        self.max_t = 120
+        self.max_t = 720
         self.score = 0
 
         self.renderer = Renderer(rendererPath)
@@ -75,8 +73,14 @@ class World(object):
     def reset(self):
         self.t = 0
         self.score = 0
+        self.target_data = copyTargetData(self.target_data0)
+
         for target in self.target_list:
-            target.reset()
+            target_state = None
+            if not self.target_data[target.ID].empty():
+                target_state = self.target_data[target.ID].get()
+            target.reset(target_state)
+
         while(self.checkCollision(0,1)):
             for crane in self.crane_list:
                 crane.reset()
