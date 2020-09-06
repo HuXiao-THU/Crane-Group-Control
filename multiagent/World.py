@@ -4,23 +4,30 @@ import tkinter
 import time
 import numpy as np
 import csv
+import queue
 from math import pi
 from Crane_discrete import Crane
 from render import Renderer
+from data import *
 
 class Target(object):
     def __init__(self, crane):
         self.theta = 0
-        self.h = 0
         self.x = 0
+        self.h = 0
         self.done = False
         self.crane = crane
         self.ID = self.crane.ID
 
-    def reset(self):
-        self.theta = np.random.randint(0, 360)
-        self.x = np.random.randint(self.crane.car_limit_near_end, self.crane.car_limit_far_end + 1)
-        self.h = np.random.randint(0, self.crane.height)
+    def reset(self, data=None):
+        if data == None:
+            self.theta = np.random.randint(0, 360)
+            self.x = np.random.randint(self.crane.car_limit_near_end, self.crane.car_limit_far_end + 1)
+            self.h = np.random.randint(0, self.crane.height)
+        else:
+            self.theta = data[1]
+            self.x = data[2]
+            self.h = data[3]
         self.done = False
 
 class Line(object):
@@ -34,7 +41,8 @@ class World(object):
     def __init__(self, rendererPath='./data'):
         self.crane_list = []
         self.target_list = []
-        self.data = self.loadData()
+        self.data = loadData()
+        self.target_data = loadTargetData()
         for line in self.data:
             crane = Crane()
             crane.ID = line[0]
@@ -46,7 +54,10 @@ class World(object):
 
         for crane in self.crane_list:
             target = Target(crane)
-            target.reset()
+            target_state = None
+            if not self.target_data[crane.ID].empty():
+                target_state = self.target_data[crane.ID].get()
+            target.reset(target_state)
             self.target_list.append(target)
 
         self.observation_space = 4 * len(self.crane_list)  # (arm_theta, delta_theta, arm_omega) * of other cranes
@@ -78,7 +89,6 @@ class World(object):
         action(list of int): index of each agent's action, 0 to 2
         """
         r = [-1 for crane in self.crane_list]
-        done = False
         for crane in self.crane_list:
             ID = crane.ID
             target = self.target_list[ID]
@@ -113,6 +123,9 @@ class World(object):
             if crane.arm_theta == target.theta and not target.done:
                 r[ID] += 200 - abs(crane.arm_omega) * 10
                 target.done = True
+                if not self.target_data[crane.ID].empty():
+                    target_state = self.target_data[crane.ID].get()
+                    target.reset(target_state)
 
         # share reward
         s = sum(r)
@@ -167,21 +180,6 @@ class World(object):
         self.renderer.render(self.crane_list, self.target_list, {'score':self.score, 'time':self.t})
         # print(self.crane.arm_theta, "  ", self.crane.car_pos)
         time.sleep(0.2)
-
-    def loadData(self):
-        """
-        load data from crane_data.csv
-        """
-        data = []
-        with open('data/crane_data.csv', 'r') as f:
-            reader = csv.reader(f)
-            next(reader)
-            for line in reader:
-                buffer = []
-                for item in line:
-                    buffer.append(int(item))
-                data.append(buffer)
-        return data
 
     def getAgentNum(self):
         """
