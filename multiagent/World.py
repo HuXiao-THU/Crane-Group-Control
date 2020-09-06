@@ -82,6 +82,8 @@ class World(object):
         for crane in self.crane_list:
             ID = crane.ID
             target = self.target_list[ID]
+            car_power = 0
+            hook_power = 0
             if target.done:
                 r[ID] += 1
             if crane.car_pos > target.x:
@@ -109,7 +111,7 @@ class World(object):
             crane.moveHook(hook_power)
 
             if crane.arm_theta == target.theta and not target.done:
-                r[ID] += 200 - abs(crane.arm_omega) * 25
+                r[ID] += 200 - abs(crane.arm_omega) * 10
                 target.done = True
 
         # share reward
@@ -124,8 +126,8 @@ class World(object):
         # 碰撞检测，手动写一下哪些有必要检测的
         for pair in [(0,1)]:
             if self.checkCollision(pair[0], pair[1]):
-                r[pair[0]] -= 500
-                r[pair[1]] -= 500
+                r[pair[0]] -= 100
+                r[pair[1]] -= 100
                 done = True
 
         if self.t > self.max_t:
@@ -202,6 +204,7 @@ class World(object):
             max(l2.y1, l2.y2) < min(l1.y1, l1.y2):
             return False
 
+        # 跨越实验
         if (((l1.x1 - l2.x1)*(l2.y2 - l2.y1) - (l1.y1 - l2.y1)*(l2.x2 - l2.x1))*\
         ((l1.x2 - l2.x1)*(l2.y2 - l2.y1) - (l1.y2 - l2.y1)*(l2.x2 - l2.x1))) > 0 or\
         (((l2.x1 - l1.x1)*(l1.y2 - l1.y1) - (l2.y1 - l1.y1)*(l1.x2 - l1.x1))*\
