@@ -67,7 +67,7 @@ def dqn(env, agents, n_episodes=10000, max_t=720, eps_start=1.0, eps_end=0.01, e
         if i_episode % 100 == 0:
             print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)))
             torch.save({'agent0':agents[0].qnetwork_local.state_dict(),'agent1':agents[1].qnetwork_local.state_dict()}, './multiagent/checkpoint.pth')
-        if np.mean(scores_window)>=1000.0:
+        if np.mean(scores_window)>=2000.0:
             print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
             torch.save({'agent0':agents[0].qnetwork_local.state_dict(),'agent1':agents[1].qnetwork_local.state_dict()}, './multiagent/checkpoint.pth')
             break
