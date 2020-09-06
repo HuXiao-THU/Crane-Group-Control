@@ -9,13 +9,12 @@ from dqn_agent import Agent
 
 def main():
     env = World()
-    agents = [Agent(state_size=env.observation_space, action_size=env.action_space, seed=0) for i in range(2)]
+    agents = [Agent(state_size=env.observation_space, action_size=env.action_space, seed=0) for i in range(env.getAgentNum())]
     scores = dqn(env, agents)
     with open('./multiagent/scores.pkl', 'wb') as f:
         pickle.dump(scores, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     # plot the scores
-
     scores_window = deque(maxlen=100)
     avg_scores = []
     for score in scores:
@@ -31,7 +30,7 @@ def main():
     plt.xlabel('Episode #')
     fig.savefig('./multiagent/training_curve.png')
 
-def dqn(env, agents, n_episodes=100000, max_t=120, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
+def dqn(env, agents, n_episodes=1000, max_t=120, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
     """Deep Q-Learning.
     
     Params
@@ -68,7 +67,7 @@ def dqn(env, agents, n_episodes=100000, max_t=120, eps_start=1.0, eps_end=0.01, 
         if i_episode % 100 == 0:
             print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)))
             torch.save({'agent0':agents[0].qnetwork_local.state_dict(),'agent1':agents[1].qnetwork_local.state_dict()}, './multiagent/checkpoint.pth')
-        if np.mean(scores_window)>=500.0:
+        if np.mean(scores_window)>=1000.0:
             print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
             torch.save({'agent0':agents[0].qnetwork_local.state_dict(),'agent1':agents[1].qnetwork_local.state_dict()}, './multiagent/checkpoint.pth')
             break

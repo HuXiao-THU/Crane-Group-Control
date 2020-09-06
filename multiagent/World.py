@@ -34,8 +34,8 @@ class World(object):
     def __init__(self, rendererPath='./data'):
         self.crane_list = []
         self.target_list = []
-        data = self.loadData()
-        for line in data:
+        self.data = self.loadData()
+        for line in self.data:
             crane = Crane()
             crane.ID = line[0]
             crane.x = line[1]
@@ -49,7 +49,7 @@ class World(object):
             target.reset()
             self.target_list.append(target)
 
-        self.observation_space = 3 * len(self.crane_list)  # (arm_theta, delta_theta, arm_omega) * of other cranes
+        self.observation_space = 4 * len(self.crane_list)  # (arm_theta, delta_theta, arm_omega) * of other cranes
         self.action_space = 3
         self.reward_sharing_ratio = 0.1
 
@@ -157,6 +157,7 @@ class World(object):
             state.append(crane.arm_theta)
             state.append(delta_theta)
             state.append(crane.arm_omega)
+            state.append(self.target_list[crane.ID].done)
         return np.array(state)
 
     def render(self):
@@ -181,6 +182,12 @@ class World(object):
                     buffer.append(int(item))
                 data.append(buffer)
         return data
+
+    def getAgentNum(self):
+        """
+        return the number of the agents
+        """
+        return len(self.data)
 
     def checkCollision(self, craneID1, craneID2):
         """
