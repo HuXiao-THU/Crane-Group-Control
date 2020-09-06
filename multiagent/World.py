@@ -38,12 +38,14 @@ class Line(object):
         self.y2 = y2
 
 class World(object):
-    def __init__(self, rendererPath='./data'):
+    def __init__(self, rendererPath='./data', loadingTarget = True):
         self.crane_list = []
         self.target_list = []
         self.data = loadData()
-        self.target_data0 = loadTargetData()
-        self.target_data = None
+        self.loadingTarget = loadingTarget
+        if loadingTarget:
+            self.target_data0 = loadTargetData()
+            self.target_data = None
 
         for line in self.data:
             crane = Crane()
@@ -73,11 +75,12 @@ class World(object):
     def reset(self):
         self.t = 0
         self.score = 0
-        self.target_data = copyTargetData(self.target_data0)
+        if self.loadingTarget:
+            self.target_data = copyTargetData(self.target_data0)
 
         for target in self.target_list:
             target_state = None
-            if not self.target_data[target.ID].empty():
+            if self.loadingTarget and not self.target_data[target.ID].empty():
                 target_state = self.target_data[target.ID].get()
             target.reset(target_state)
 
@@ -127,7 +130,7 @@ class World(object):
             if crane.arm_theta == target.theta and not target.done:
                 r[ID] += 200 - abs(crane.arm_omega) * 10
                 target.done = True
-                if not self.target_data[crane.ID].empty():
+                if self.loadingTarget and not self.target_data[crane.ID].empty():
                     target_state = self.target_data[crane.ID].get()
                     target.reset(target_state)
 
