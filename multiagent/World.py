@@ -144,7 +144,7 @@ class World(object):
             done = done and target.done
 
         # 碰撞检测，手动写一下哪些有必要检测的
-        for pair in [(0,1)]:
+        for pair in [(0,1),(0,2),(2,3),(1,3)]:
             if self.checkCollision(pair[0], pair[1]):
                 r[pair[0]] -= 100
                 r[pair[1]] -= 100
