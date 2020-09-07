@@ -47,15 +47,18 @@ def dqn(env, agents, n_episodes=100000, max_t=720, eps_start=1.0, eps_end=0.01, 
     eps = eps_start                    # initialize epsilon
     first_episode = 0
 
-    if os.path.exists('./multiagent/checkpoint.pth'):
-        ckpt = torch.load('./multiagent/checkpoint.pth')
+    if os.path.exists('./multiagent/checkpoint.pkl'):
+        with open('./multiagent/checkpoint.pkl', 'rb') as f:
+            ckpt = pickle.load(f)
         scores = ckpt['scores']
         for score in scores:
             scores_window.append(score)
         first_episode = ckpt['episode']
+        eps = ckpt['eps']
         for i, agent in enumerate(agents):
             agent.qnetwork_target.load_state_dict(ckpt['qnetwork_target'][i])
             agent.qnetwork_local.load_state_dict(ckpt['qnetwork_local'][i])
+            agent.optimizer.load_state_dict(ckpt['optimizer'][i])
 
     for i_episode in range(first_episode + 1, n_episodes+1):
         state = env.reset()
@@ -77,22 +80,30 @@ def dqn(env, agents, n_episodes=100000, max_t=720, eps_start=1.0, eps_end=0.01, 
         scores.append(score)              # save most recent score
         eps = max(eps_end, eps_decay*eps) # decrease epsilon
         print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)), end="")
-        if i_episode % 100 == 0:
+        if i_episode % 1000 == 0:
             print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)))
             ckpt = {'qnetwork_local':[agent.qnetwork_local.state_dict() for agent in agents],
                     'qnetwork_target':[agent.qnetwork_target.state_dict() for agent in agents],
+                    'optimizer':[agent.optimizer.state_dict() for agent in agents],
                     'episode':i_episode,
-                    'scores':scores
+                    'scores':scores,
+                    'eps':eps
             }
-            torch.save(ckpt, './multiagent/checkpoint.pth')
-        if np.mean(scores_window) >= 5000.0:
+            with open('./multiagent/checkpoint.pkl', 'wb') as f:
+                pickle.dump(ckpt, f)
+            # torch.save(ckpt, './multiagent/checkpoint.pth')#要改成pickle！！！
+        if np.mean(scores_window) >= 5500.0:
             print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
             ckpt = {'qnetwork_local':[agent.qnetwork_local.state_dict() for agent in agents],
                     'qnetwork_target':[agent.qnetwork_target.state_dict() for agent in agents],
+                    'optimizer':[agent.optimizer.state_dict() for agent in agents],
                     'episode':i_episode,
-                    'scores':scores
+                    'scores':scores,
+                    'eps':eps
             }
-            torch.save(ckpt, './multiagent/checkpoint.pth')
+            with open('./multiagent/checkpoint.pkl', 'wb') as f:
+                pickle.dump(ckpt, f)
+            # torch.save(ckpt, './multiagent/checkpoint.pth')
             break
     return scores
 

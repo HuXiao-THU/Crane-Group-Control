@@ -11,7 +11,8 @@ from dqn_agent import Agent
 env = World()
 agents = [Agent(state_size=env.observation_space, action_size=env.action_space, seed=0) for i in range(env.getAgentNum())]
 
-ckpt = torch.load('./multiagent/checkpoint.pth')
+with open('./multiagent/checkpoint.pkl', 'rb') as f:
+    ckpt = pickle.load(f)
 for i, agent in enumerate(agents):
     agent.qnetwork_target.load_state_dict(ckpt['qnetwork_target'][i])
     agent.qnetwork_local.load_state_dict(ckpt['qnetwork_local'][i])
