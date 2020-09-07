@@ -10,7 +10,7 @@ class Crane(object):
         self.x = 100
         self.y = 100
         self.R1 = 30
-        self.R2 = 10
+        self.R2 = 8
 
         self.arm_theta = 0
         self.arm_omega = 0
