@@ -9,18 +9,19 @@ from World import World
 from dqn_agent import Agent
 
 env = World()
-agent0 = Agent(state_size=env.observation_space, action_size=env.action_space, seed=0)
-agent1 = Agent(state_size=env.observation_space, action_size=env.action_space, seed=0)
-d = torch.load('./multiagent/checkpoint.pth')
-agent0.qnetwork_local.load_state_dict(d['agent0'])
-agent1.qnetwork_local.load_state_dict(d['agent1'])
+agents = [Agent(state_size=env.observation_space, action_size=env.action_space, seed=0) for i in range(env.getAgentNum())]
+
+ckpt = torch.load('./multiagent/checkpoint.pth')
+for i, agent in enumerate(agents):
+    agent.qnetwork_target.load_state_dict(ckpt['qnetwork_target'][i])
+    agent.qnetwork_local.load_state_dict(ckpt['qnetwork_local'][i])
 
 # watch an untrained agent
 state = env.reset()
 for j in range(720):
-    action0 = agent0.act(state)
-    action1 = agent1.act(state)
-    action = [action0, action1]
+    action = []
+    for k in range(env.getAgentNum()):
+        action.append(agents[k].act(state))
     env.render()
     state, reward, done, _ = env.step(action)
     if done:

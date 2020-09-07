@@ -1,6 +1,7 @@
 import random
 import torch
 import pickle
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import deque
@@ -30,7 +31,7 @@ def main():
     plt.xlabel('Episode #')
     fig.savefig('./multiagent/training_curve.png')
 
-def dqn(env, agents, n_episodes=10000, max_t=720, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
+def dqn(env, agents, n_episodes=100000, max_t=720, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
     """Deep Q-Learning.
     
     Params
@@ -44,7 +45,19 @@ def dqn(env, agents, n_episodes=10000, max_t=720, eps_start=1.0, eps_end=0.01, e
     scores = []                        # list containing scores from each episode
     scores_window = deque(maxlen=100)  # last 100 scores
     eps = eps_start                    # initialize epsilon
-    for i_episode in range(1, n_episodes+1):
+    first_episode = 0
+
+    if os.path.exists('./multiagent/checkpoint.pth'):
+        ckpt = torch.load('./multiagent/checkpoint.pth')
+        scores = ckpt['scores']
+        for score in scores:
+            scores_window.append(score)
+        first_episode = ckpt['episode']
+        for i, agent in enumerate(agents):
+            agent.qnetwork_target.load_state_dict(ckpt['qnetwork_target'][i])
+            agent.qnetwork_local.load_state_dict(ckpt['qnetwork_local'][i])
+
+    for i_episode in range(first_episode + 1, n_episodes+1):
         state = env.reset()
         score = 0
         done = False
@@ -66,10 +79,20 @@ def dqn(env, agents, n_episodes=10000, max_t=720, eps_start=1.0, eps_end=0.01, e
         print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)), end="")
         if i_episode % 100 == 0:
             print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)))
-            torch.save({'agent0':agents[0].qnetwork_local.state_dict(),'agent1':agents[1].qnetwork_local.state_dict()}, './multiagent/checkpoint.pth')
-        if np.mean(scores_window)>=2000.0:
+            ckpt = {'qnetwork_local':[agent.qnetwork_local.state_dict() for agent in agents],
+                    'qnetwork_target':[agent.qnetwork_target.state_dict() for agent in agents],
+                    'episode':i_episode,
+                    'scores':scores
+            }
+            torch.save(ckpt, './multiagent/checkpoint.pth')
+        if np.mean(scores_window) >= 5000.0:
             print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
-            torch.save({'agent0':agents[0].qnetwork_local.state_dict(),'agent1':agents[1].qnetwork_local.state_dict()}, './multiagent/checkpoint.pth')
+            ckpt = {'qnetwork_local':[agent.qnetwork_local.state_dict() for agent in agents],
+                    'qnetwork_target':[agent.qnetwork_target.state_dict() for agent in agents],
+                    'episode':i_episode,
+                    'scores':scores
+            }
+            torch.save(ckpt, './multiagent/checkpoint.pth')
             break
     return scores
 
