@@ -26,6 +26,7 @@ class Renderer(object):
         self.vertical.pack()
 
         self.current_crane = 0
+        self.haveInited = False
 
         self.crane_image = tk.PhotoImage(file=os.path.join(data_path, 'crane.png'))
         
@@ -43,6 +44,7 @@ class Renderer(object):
         self.plane.delete(tk.ALL)
         for crane in crane_list:
             self.plane.create_polygon(crane.x, crane.y - 2, crane.x - 2, crane.y + 1, crane.x + 2, crane.y + 1, fill='black')
+            self.plane.create_text(crane.x - 3, crane.y - 5, text=str(crane.ID))
             self.plane.create_oval(crane.x - crane.R1, crane.y - crane.R1, crane.x + crane.R1, crane.y + crane.R1)
             self.plane.create_line(crane.x - math.cos(crane.arm_theta / 180 * pi) * crane.R2,
                                     crane.y - math.sin(crane.arm_theta / 180 * pi) * crane.R2,
@@ -53,7 +55,8 @@ class Renderer(object):
             self.plane.create_oval(x-1, y-1, x+1, y+1, fill='black')
 
             # button
-            # tk.Button(self.plane_frame, cursor="hand1", relief="flat", width=2, height=1, command=lambda: self.setCurrentCrane(crane.ID)).place(x=(crane.x-2-8)*self.zoom_ratio, y=(crane.y-2)*self.zoom_ratio)
+            if not self.haveInited:
+                tk.Button(self.plane_frame, text='crane '+str(crane.ID), font=('Helvetica', '24'), width=6, height=1, command=lambda x=crane.ID: self.setCurrentCrane(x)).place(x=(5 + crane.ID * 50)*self.zoom_ratio, y=(5)*self.zoom_ratio)
 
         for target in target_list:
             if not target.done:
@@ -82,6 +85,7 @@ class Renderer(object):
 
         self.plane.scale('all',0,0,3,3)
         self.root.update()
+        self.haveInited = True
 
     def setCurrentCrane(self, ID):
         self.current_crane = ID

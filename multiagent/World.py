@@ -186,7 +186,7 @@ class World(object):
         """
         self.renderer.render(self.crane_list, self.target_list, {'score':self.score, 'time':self.t})
         # print(self.crane.arm_theta, "  ", self.crane.car_pos)
-        time.sleep(0.2)
+        # time.sleep(0.2)
 
     def getAgentNum(self):
         """
