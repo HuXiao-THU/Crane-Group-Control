@@ -146,8 +146,8 @@ class World(object):
         # 碰撞检测，手动写一下哪些有必要检测的
         for pair in [(0,1),(0,2),(2,3),(1,3)]:
             if self.checkCollision(pair[0], pair[1]):
-                r[pair[0]] -= 200
-                r[pair[1]] -= 200
+                r[pair[0]] -= 2000
+                r[pair[1]] -= 2000
                 done = True
 
         if self.t > self.max_t:

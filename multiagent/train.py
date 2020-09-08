@@ -64,6 +64,7 @@ def dqn(env, agents, n_episodes=100000, max_t=720, eps_start=1.0, eps_end=0.01, 
         state = env.reset()
         score = 0
         done = False
+        eps = 1/i_episode
         for t in range(max_t):
             actions = []
             for ID, agent in enumerate(agents):
