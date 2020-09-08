@@ -3,10 +3,13 @@ import torch
 import pickle
 import os
 import numpy as np
+import time
 import matplotlib.pyplot as plt
 from collections import deque
 from World import World
 from dqn_agent import Agent
+
+dt = 0.017
 
 env = World()
 agents = [Agent(state_size=env.observation_space, action_size=env.action_space, seed=0) for i in range(env.getAgentNum())]
@@ -18,12 +21,18 @@ for i, agent in enumerate(agents):
     agent.qnetwork_local.load_state_dict(ckpt['qnetwork_local'][i])
 
 # watch an untrained agent
+last_time = time.time()
 state = env.reset()
 for j in range(720):
+    while True:
+        env.render()
+        current_time = time.time()
+        if current_time > last_time + dt:
+            last_time = current_time
+            break
     action = []
     for k in range(env.getAgentNum()):
         action.append(agents[k].act(state))
-    env.render()
     state, reward, done, _ = env.step(action)
     if done:
         break 
