@@ -20,6 +20,21 @@ for i, agent in enumerate(agents):
     agent.qnetwork_target.load_state_dict(ckpt['qnetwork_target'][i])
     agent.qnetwork_local.load_state_dict(ckpt['qnetwork_local'][i])
 
+collision = 0
+test_num = 100
+for i in range(1, test_num + 1):
+    state = env.reset()
+    for j in range(720):
+        action = []
+        for k in range(env.getAgentNum()):
+            action.append(agents[k].act(state))
+        state, reward, done, info = env.step(action)
+        if done:
+            if info['collision']:
+                collision += 1
+            break
+    print('\rtest num: {:d}/{:d}\tcollision num: {:d}\tcollision rate: {:.2f}'.format(i, test_num, collision, collision/i), end='')
+
 # watch an untrained agent
 last_time = time.time()
 state = env.reset()
