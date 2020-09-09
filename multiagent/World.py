@@ -67,6 +67,7 @@ class World(object):
         self.t = 0
         self.max_t = 720
         self.score = 0
+        self.collision = False
 
         self.renderer = Renderer(rendererPath)
 
@@ -75,6 +76,7 @@ class World(object):
     def reset(self):
         self.t = 0
         self.score = 0
+        self.collision = False
         if self.loadingTarget:
             self.target_data = copyTargetData(self.target_data0)
 
@@ -146,9 +148,10 @@ class World(object):
         # 碰撞检测，手动写一下哪些有必要检测的
         for pair in [(0,1),(0,2),(2,3),(1,3)]:
             if self.checkCollision(pair[0], pair[1]):
-                r[pair[0]] -= 2000
-                r[pair[1]] -= 2000
+                r[pair[0]] -= 1000
+                r[pair[1]] -= 1000
                 done = True
+                self.collision = True
 
         if self.t > self.max_t:
             done = True
@@ -161,7 +164,7 @@ class World(object):
         # return state, r, done, _
         self.score += sum(r)
         # print(r,"Target0: ", self.target_list[0].done," Target1: ", self.target_list[1].done)
-        return (self.getState(), r, done, {'score':self.score})
+        return (self.getState(), r, done, {'score':self.score, 'collision':self.collision})
 
     def getState(self):
         """
