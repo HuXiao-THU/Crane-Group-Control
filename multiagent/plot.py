@@ -6,7 +6,7 @@ from collections import deque
 with open('./multiagent/checkpoint.pkl', 'rb') as f:
     ckpt = pickle.load(f)
 
-scores = ckpt['scores']
+scores = ckpt['scores'][50000:]
 scores_window = deque(maxlen=100)
 avg_scores = []
 for score in scores:
@@ -23,4 +23,4 @@ plt.legend(['score', 'MA score'])
 plt.ylabel('Score')
 plt.xlabel('Episode #')
 # plt.show()
-fig.savefig('./multiagent/training_curve.png')
+fig.savefig('./multiagent/training_curve_2_new.png')

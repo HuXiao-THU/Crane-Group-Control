@@ -63,6 +63,7 @@ class World(object):
         self.observation_space = 4 * len(self.crane_list)  # (arm_theta, delta_theta, arm_omega) * of other cranes
         self.action_space = 3
         self.reward_sharing_ratio = 0.1
+        self.collision_pairs = [(0,1),(0,2),(2,3),(1,3)]
 
         self.t = 0
         self.max_t = 720
@@ -86,9 +87,15 @@ class World(object):
                 target_state = self.target_data[target.ID].get()
             target.reset(target_state)
 
-        while(self.checkCollision(0,1)):
+        clear = False
+        while not clear:
+            clear = True
             for crane in self.crane_list:
                 crane.reset()
+            for pair in [(0,1),(0,2),(2,3),(1,3)]:
+                clear = clear and not self.checkCollision(pair[0], pair[1])
+                if not clear:
+                    break
 
         return self.getState()
 
