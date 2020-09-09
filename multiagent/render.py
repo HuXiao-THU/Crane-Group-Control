@@ -10,7 +10,7 @@ class Renderer(object):
     def __init__(self, data_path):
         self.root = tk.Tk()
         self.root.title('Crane Control Demo')
-        self.root.geometry('1600x600+50+50')
+        self.root.geometry('1600x600+0+0')
         self.zoom_ratio = 3
 
         self.main_frame = tk.Frame(self.root, width=1600, height=600, bg='pink')
