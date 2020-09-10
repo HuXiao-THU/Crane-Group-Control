@@ -27,6 +27,8 @@ class Renderer(object):
 
         self.current_crane = 0
         self.haveInited = False
+        self.restart = False
+        self.collision = False
 
         self.crane_image = tk.PhotoImage(file=os.path.join(data_path, 'crane.png'))
         
@@ -57,6 +59,9 @@ class Renderer(object):
             # button
             if not self.haveInited:
                 tk.Button(self.plane_frame, text='crane '+str(crane.ID), font=('Helvetica', '24'), width=6, height=1, command=lambda x=crane.ID: self.setCurrentCrane(x)).place(x=(5 + crane.ID * 50)*self.zoom_ratio, y=(5)*self.zoom_ratio)
+        
+        if not self.haveInited:
+            tk.Button(self.plane_frame, text='Restart', font=('Helvetica', '24'), width=6, height=1, command=lambda x=True: self.setRestart(x)).place(x=(220)*self.zoom_ratio, y=(5)*self.zoom_ratio)
 
         for target in target_list:
             if not target.done:
@@ -83,13 +88,24 @@ class Renderer(object):
 
             self.vertical.create_text(20,20,text='Crane ID: {:d}'.format(self.current_crane), anchor=tk.NW, font=('microsoft yahei', 30, 'bold'))
 
+        if self.collision:
+            self.plane.create_text(50,30, text='Crash!',anchor=tk.NW, font=('microsoft yahei', 30, 'bold'))
+
         self.plane.scale('all',0,0,3,3)
         self.root.update()
         self.haveInited = True
+        if self.restart:
+            self.restart = False
+            return True
+        else:
+            return False
 
     def setCurrentCrane(self, ID):
         self.current_crane = ID
         self.root.update()
+
+    def setRestart(self, x):
+        self.restart = x
 
 if __name__ == '__main__':
     renderer = Renderer()

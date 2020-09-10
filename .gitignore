@@ -10,3 +10,4 @@ DDPG\checkpoint_critic.pth
 /multiagent/__pycache__/
 /DQN/scores.pkl
 /multiagent/scores.pkl
+/__pycache__/

@@ -171,6 +171,7 @@ class World(object):
         # return state, r, done, _
         self.score += sum(r)
         # print(r,"Target0: ", self.target_list[0].done," Target1: ", self.target_list[1].done)
+        self.renderer.collision = self.collision
         return (self.getState(), r, done, {'score':self.score, 'collision':self.collision})
 
     def getState(self):
@@ -194,7 +195,7 @@ class World(object):
         """
         render the visualization
         """
-        self.renderer.render(self.crane_list, self.target_list, {'score':self.score, 'time':self.t})
+        return self.renderer.render(self.crane_list, self.target_list, {'score':self.score, 'time':self.t})
         # print(self.crane.arm_theta, "  ", self.crane.car_pos)
         # time.sleep(0.2)
 

@@ -1,0 +1,1 @@
+python ./multiagent/demo_trained.py
