@@ -10,7 +10,7 @@ from World import World
 from dqn_agent import Agent
 
 def main():
-    dt = 0.1
+    dt = 0.05
 
     env = World()
     agents = [Agent(state_size=env.observation_space, action_size=env.action_space, seed=0) for i in range(env.getAgentNum())]
